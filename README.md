@@ -3,8 +3,9 @@
 
 Definitely not a malware I made today. 
 You should **DEFINITELY** run this using Docker.
-If you don't have docker, you will kinda need it to run ts. [here's a guide on how to install it](https://www.docker.com/get-started/ ).
-![SomeoneDeletedMe :(](/Users/nishant/Developer/projects/HackathonWebsiteThing/DON\'T\ DELETE\ ME.png)
+If you don't have docker, you will kinda need it to run ts. [here's a guide on how to install it](https://www.docker.com/get-started/ ).<br>
+
+![SomeoneDeletedMe :(https://github.com/naturalStupidityy/PrototypeForHackathon/blob/main/DON'T%20DELETE%20ME.png)]
 
 # how do i run ts? 
 
