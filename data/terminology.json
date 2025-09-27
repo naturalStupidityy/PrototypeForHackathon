@@ -1,0 +1,60 @@
+{
+  "ayushSystems": [
+    {
+      "name": "Ayurveda",
+      "code": "AV",
+      "description": "Ancient Indian system of medicine based on natural healing",
+      "terminologyCount": 14753,
+      "validatedMappings": 8542,
+      "pendingMappings": 6211
+    },
+    {
+      "name": "Siddha",
+      "code": "SD",
+      "description": "Traditional Tamil system of medicine",
+      "terminologyCount": 8920,
+      "validatedMappings": 5123,
+      "pendingMappings": 3797
+    },
+    {
+      "name": "Unani",
+      "code": "UN",
+      "description": "Perso-Arabic system of medicine",
+      "terminologyCount": 7654,
+      "validatedMappings": 4321,
+      "pendingMappings": 3333
+    },
+    {
+      "name": "Yoga & Naturopathy",
+      "code": "YN",
+      "description": "Holistic approach to health through yoga and natural therapies",
+      "terminologyCount": 3421,
+      "validatedMappings": 2187,
+      "pendingMappings": 1234
+    },
+    {
+      "name": "Homeopathy",
+      "code": "HM",
+      "description": "System of medicine based on 'like cures like' principle",
+      "terminologyCount": 5678,
+      "validatedMappings": 3456,
+      "pendingMappings": 2222
+    }
+  ],
+  "icd11Modules": [
+    {
+      "module": "TM2",
+      "name": "Traditional Medicine Module 2",
+      "description": "Ayurveda, Siddha, and Unani systems",
+      "launchDate": "2024-01-10",
+      "status": "Active"
+    }
+  ],
+  "mappingStats": {
+    "totalMappings": 34826,
+    "validatedMappings": 24629,
+    "pendingValidation": 10197,
+    "validationRate": 70.7,
+    "lastUpdated": "2024-01-25"
+  }
+}

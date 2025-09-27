@@ -1,0 +1,11 @@
+NAMASTE_Code,NAMASTE_Term,ICD11_TM2_Code,ICD11_TM2_Term,Validation_Status,Confidence_Score,Last_Updated
+AAE-16,Sandhigatavata (osteoarthritis),TM2-1234,Osteoarthritis,Validated,0.95,2024-01-15
+A.A.,Vatavyadhi (disorders due to Vata),TM2-5678,Vata disorders,Validated,0.89,2024-01-10
+A.K.,Kasa (cough/tussis),TM2-9012,Acute cough,Pending,0.78,2024-01-20
+A.AM,Arsha (hemorrhoids),TM2-3456,Hemorrhoids,Validated,0.92,2024-01-12
+A.MK,Madhumcha/Kshaudrameha (diabetes mellitus),TM2-7890,Diabetes mellitus,Validated,0.96,2024-01-08
+A.KU,Kushta (integumentary disease),TM2-2345,Skin disorders,Pending,0.82,2024-01-18
+A.AP,Amlapitta (hyperacidity),TM2-6789,Hyperacidity,Validated,0.87,2024-01-14
+A.DA,Daurbalya (debility),TM2-0123,General debility,Pending,0.75,2024-01-22
+A.VI,Vibandha (simple constipation),TM2-4567,Constipation,Validated,0.91,2024-01-11
+A.PR,Pratisyaya (rhinitis),TM2-8901,Acute rhinitis,Pending,0.79,2024-01-19

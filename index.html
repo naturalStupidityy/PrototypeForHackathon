@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAMASTE-FHIR Terminology Mapping Service</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+    <style>
+        :root {
+            --primary: #2C5F5D;
+            --secondary: #E67E22;
+            --accent: #F39C12;
+            --neutral: #7F8C8D;
+            --background: #FAFAFA;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: #2c3e50;
+        }
+        
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, rgba(44, 95, 93, 0.9), rgba(230, 126, 34, 0.8)), url('resources/hero-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        .glass-nav {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(44, 95, 93, 0.1);
+        }
+        
+        .mapping-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(44, 95, 93, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(44, 95, 93, 0.05);
+        }
+        
+        .mapping-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(44, 95, 93, 0.15);
+        }
+        
+        .search-input {
+            background: white;
+            border: 2px solid rgba(44, 95, 93, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 95, 93, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 95, 93, 0.3);
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, white, rgba(44, 95, 93, 0.02));
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(44, 95, 93, 0.05);
+        }
+        
+        .network-viz {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(44, 95, 93, 0.1);
+            min-height: 500px;
+        }
+        
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.6s ease;
+        }
+        
+        .validation-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .validated {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+        
+        .pending {
+            background: rgba(241, 196, 15, 0.1);
+            color: #f1c40f;
+        }
+        
+        .conflict {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+        
+        #p5-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div id="p5-background"></div>
+    
+    <!-- Navigation -->
+    <nav class="glass-nav fixed w-full top-0 z-50 py-4">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">N</span>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-xl font-bold text-gray-800">NAMASTE-FHIR</h1>
+                        <p class="text-xs text-gray-600">Terminology Mapping Service</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-primary font-medium border-b-2 border-primary pb-1">Mapping</a>
+                    <a href="validation.html" class="text-gray-600 hover:text-primary transition-colors">Validation</a>
+                    <a href="export.html" class="text-gray-600 hover:text-primary transition-colors">Export</a>
+                    <a href="about.html" class="text-gray-600 hover:text-primary transition-colors">About</a>
+                </div>
+                <button class="md:hidden p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-screen flex items-center pt-20">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto text-center text-white">
+                <h1 class="font-display text-5xl md:text-6xl font-bold mb-6 fade-in">
+                    <span id="typed-hero"></span>
+                </h1>
+                <p class="text-xl md:text-2xl mb-8 opacity-90 fade-in">
+                    Bridging traditional AYUSH medicine with modern healthcare standards through FHIR R4 compliant terminology mapping
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in">
+                    <button class="btn-primary text-lg px-8 py-4" onclick="scrollToMapping()">
+                        Explore Mappings
+                    </button>
+                    <button class="bg-white bg-opacity-20 text-white border-2 border-white border-opacity-30 rounded-lg px-8 py-4 hover:bg-opacity-30 transition-all" onclick="window.location.href='about.html'">
+                        Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="font-display text-4xl font-bold text-gray-800 mb-4">Mapping Progress</h2>
+                <p class="text-xl text-gray-600">Real-time statistics of our terminology mapping initiative</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="stats-card fade-in">
+                    <div class="text-3xl font-bold text-primary mb-2" id="total-mappings">34,826</div>
+                    <div class="text-gray-600">Total Mappings</div>
+                </div>
+                <div class="stats-card fade-in">
+                    <div class="text-3xl font-bold text-green-600 mb-2" id="validated-mappings">24,629</div>
+                    <div class="text-gray-600">Validated</div>
+                </div>
+                <div class="stats-card fade-in">
+                    <div class="text-3xl font-bold text-yellow-600 mb-2" id="pending-mappings">10,197</div>
+                    <div class="text-gray-600">Pending</div>
+                </div>
+                <div class="stats-card fade-in">
+                    <div class="text-3xl font-bold text-secondary mb-2" id="validation-rate">70.7%</div>
+                    <div class="text-gray-600">Validation Rate</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Mapping Interface -->
+    <section id="mapping-interface" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="font-display text-4xl font-bold text-gray-800 mb-4">Interactive Mapping Interface</h2>
+                <p class="text-xl text-gray-600">Explore bidirectional mappings between NAMASTE and ICD-11-TM2 terminologies</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Search Panel -->
+                <div class="lg:col-span-3 fade-in">
+                    <div class="mapping-card p-6">
+                        <h3 class="font-display text-xl font-semibold mb-4 text-gray-800">Search Terminology</h3>
+                        <div class="space-y-4">
+                            <input type="text" id="search-input" placeholder="Search AYUSH terms..." 
+                                   class="search-input w-full px-4 py-3 text-sm focus:outline-none">
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span class="text-sm">Ayurveda</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span class="text-sm">Siddha</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span class="text-sm">Unani</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span class="text-sm">Yoga & Naturopathy</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span class="text-sm">Homeopathy</span>
+                                </label>
+                            </div>
+                            <button class="btn-primary w-full" onclick="performSearch()">
+                                Search Mappings
+                            </button>
+                        </div>
+                        
+                        <!-- Search Results -->
+                        <div id="search-results" class="mt-6 space-y-3 hidden">
+                            <h4 class="font-semibold text-gray-700">Search Results</h4>
+                            <div id="results-list" class="space-y-2 max-h-64 overflow-y-auto">
+                                <!-- Results will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Network Visualization -->
+                <div class="lg:col-span-6 fade-in">
+                    <div class="network-viz">
+                        <div class="p-6 border-b border-gray-100">
+                            <h3 class="font-display text-xl font-semibold text-gray-800">Mapping Network</h3>
+                            <p class="text-sm text-gray-600 mt-1">Interactive visualization of terminology relationships</p>
+                        </div>
+                        <div id="network-chart" class="h-96 p-6"></div>
+                    </div>
+                </div>
+                
+                <!-- Details Panel -->
+                <div class="lg:col-span-3 fade-in">
+                    <div class="mapping-card p-6">
+                        <h3 class="font-display text-xl font-semibold mb-4 text-gray-800">Mapping Details</h3>
+                        <div id="mapping-details">
+                            <div class="text-center text-gray-500 py-8">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p>Click on a mapping node to view details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="font-display text-4xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+                <p class="text-xl text-gray-600">Access key features directly from the main interface</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="mapping-card p-8 text-center fade-in hover:scale-105 transition-transform cursor-pointer" onclick="window.location.href='validation.html'">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-display text-xl font-semibold mb-2">Validate Mappings</h3>
+                    <p class="text-gray-600">Expert validation interface for approving terminology mappings</p>
+                </div>
+                <div class="mapping-card p-8 text-center fade-in hover:scale-105 transition-transform cursor-pointer" onclick="window.location.href='export.html'">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-display text-xl font-semibold mb-2">Export Data</h3>
+                    <p class="text-gray-600">Export mappings in FHIR R4, CSV, JSON, and DHIS2 formats</p>
+                </div>
+                <div class="mapping-card p-8 text-center fade-in hover:scale-105 transition-transform cursor-pointer" onclick="window.location.href='about.html'">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-display text-xl font-semibold mb-2">Documentation</h3>
+                    <p class="text-gray-600">Comprehensive documentation and compliance information</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">N</span>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-xl font-bold">NAMASTE-FHIR</h3>
+                        <p class="text-sm text-gray-400">Terminology Mapping Service</p>
+                    </div>
+                </div>
+                <p class="text-gray-400 mb-4">
+                    © 2024 NAMASTE-FHIR Terminology Mapping Service. Compliant with India's 2016 EHR Standards and WCAG 2.1 AA.
+                </p>
+                <div class="flex justify-center space-x-6 text-sm text-gray-500">
+                    <span>FHIR R4 Compatible</span>
+                    <span>•</span>
+                    <span>ICD-11 TM2 Ready</span>
+                    <span>•</span>
+                    <span>DHIS2 Integration</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>
