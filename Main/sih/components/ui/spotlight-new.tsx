@@ -30,8 +30,8 @@ export const Spotlight = ({
       <div
         className="absolute top-0 left-0 w-screen h-screen z-40 pointer-events-none spotlight-sway-left"
         style={{
-          ["--spotlight-duration" as any]: `${duration}s`,
-          ["--spotlight-x" as any]: `${xOffset}px`,
+          ["--spotlight-duration" as unknown as string]: `${duration}s`,
+          ["--spotlight-x" as unknown as string]: `${xOffset}px`,
         }}
       >
         <div
@@ -68,8 +68,8 @@ export const Spotlight = ({
       <div
         className="absolute top-0 right-0 w-screen h-screen z-40 pointer-events-none spotlight-sway-right"
         style={{
-          ["--spotlight-duration" as any]: `${duration}s`,
-          ["--spotlight-x" as any]: `${xOffset}px`,
+          ["--spotlight-duration" as unknown as string]: `${duration}s`,
+          ["--spotlight-x" as unknown as string]: `${xOffset}px`,
         }}
       >
         <div

@@ -12,7 +12,7 @@ type RevealProps = PropsWithChildren<
 >;
 
 export function Reveal({ as = "div", delayMs = 0, className, children, href, ...rest }: RevealProps) {
-  const Comp = as as any;
+  const Comp = as as unknown as React.ElementType;
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -36,7 +36,8 @@ export function Reveal({ as = "div", delayMs = 0, className, children, href, ...
 
   return (
     <Comp
-      ref={ref as any}
+      // @ts-expect-error generic element ref
+      ref={ref}
       href={href}
       className={[
         "transition-all duration-700 will-change-transform",

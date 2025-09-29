@@ -22,8 +22,9 @@ function parseCsv(csv: string): CsvRow[] {
     .filter((l) => l.trim().length > 0)
     .map((line) => {
       const cols = line.split(",");
-      const obj: any = {};
+      const obj: Partial<CsvRow> = {};
       headers.forEach((h, i) => {
+        // @ts-expect-error index assignment mapped from CSV header
         obj[h] = cols[i] ?? "";
       });
       return obj as CsvRow;
@@ -70,7 +71,7 @@ export async function GET() {
     const nodes = Array.from(nodeMap.values());
 
     return NextResponse.json({ nodes, links });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ error: "Failed to load mappings" }, { status: 500 });
   }
 }

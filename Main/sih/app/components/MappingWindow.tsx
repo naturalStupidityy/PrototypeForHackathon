@@ -31,7 +31,12 @@ type TerminologyData = {
 
 export function MappingWindow() {
   const chartRef = useRef<HTMLDivElement | null>(null);
-  const echartsRef = useRef<any>(null);
+  const echartsRef = useRef<{
+    setOption: (opt: unknown) => void;
+    dispose?: () => void;
+    resize?: () => void;
+    on?: (event: string, handler: (params: unknown) => void) => void;
+  } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [stats, setStats] = useState<TerminologyData["mappingStats"] | null>(null);
@@ -53,12 +58,13 @@ export function MappingWindow() {
   useEffect(() => {
     if (!echartsReady) return;
     function initChart() {
-      const echarts = (window as any).echarts;
+      const echarts = (window as unknown as { echarts?: any }).echarts;
       if (!echarts || !chartRef.current) return;
       echartsRef.current = echarts.init(chartRef.current);
       const isDark = document.documentElement.classList.contains("dark");
       const textColor = isDark ? "#ffffff" : "#111111";
       const tooltipBg = isDark ? "rgba(20,20,20,0.9)" : "rgba(255,255,255,0.95)";
+      if (!echartsRef.current) return;
       echartsRef.current.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -117,20 +123,22 @@ export function MappingWindow() {
         ],
       });
 
-      echartsRef.current.on("click", function (params: any) {
+      echartsRef.current && (echartsRef.current as any).on?.("click", function (params: any) {
         if (params.dataType === "node") {
           setSelectedId(params.data.id);
         }
       });
 
       function handleResize() {
-        echartsRef.current?.resize();
+        if (echartsRef.current && (echartsRef.current as any).resize) {
+          (echartsRef.current as any).resize();
+        }
       }
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
     }
 
-    const done = initChart();
+    initChart();
 
     // load dynamic nodes/links from CSV API AFTER chart is ready
     fetch("/api/mappings")
@@ -156,6 +164,7 @@ export function MappingWindow() {
       const isDarkNow = document.documentElement.classList.contains("dark");
       const textColorNow = isDarkNow ? "#ffffff" : "#111111";
       const tooltipBgNow = isDarkNow ? "rgba(20,20,20,0.9)" : "rgba(255,255,255,0.95)";
+      if (!echartsRef.current) return;
       echartsRef.current.setOption({
         tooltip: { backgroundColor: tooltipBgNow, textStyle: { color: textColorNow } },
         legend: { textStyle: { color: textColorNow } },
@@ -164,9 +173,11 @@ export function MappingWindow() {
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => {
-      if (typeof done === "function") done();
-      echartsRef.current?.dispose?.();
-      observer.disconnect();
+      try {
+        echartsRef.current?.dispose?.();
+      } finally {
+        observer.disconnect();
+      }
     };
   }, [echartsReady]);
 
