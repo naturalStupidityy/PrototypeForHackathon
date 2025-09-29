@@ -4,16 +4,15 @@ import { PropsWithChildren, useEffect, useRef, useState, HTMLAttributes } from "
 
 type RevealProps = PropsWithChildren<
   {
-    as?: keyof JSX.IntrinsicElements;
+    as?: React.ElementType;
     delayMs?: number;
     className?: string;
-    href?: string;
   } & HTMLAttributes<HTMLElement>
 >;
 
-export function Reveal({ as = "div", delayMs = 0, className, children, href, ...rest }: RevealProps) {
-  const Comp = as as unknown as React.ElementType;
-  const ref = useRef<HTMLElement | null>(null);
+export function Reveal({ as = "div", delayMs = 0, className, children, ...rest }: RevealProps) {
+  const Comp = as as React.ElementType;
+  const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -35,19 +34,16 @@ export function Reveal({ as = "div", delayMs = 0, className, children, href, ...
   }, [delayMs]);
 
   return (
-    <Comp
-      // @ts-expect-error generic element ref
+    <div
       ref={ref}
-      href={href}
       className={[
         "transition-all duration-700 will-change-transform",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         className || "",
       ].join(" ")}
-      {...rest}
     >
-      {children}
-    </Comp>
+      <Comp {...rest}>{children}</Comp>
+    </div>
   );
 }
 

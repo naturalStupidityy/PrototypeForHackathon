@@ -11,7 +11,7 @@ export async function GET() {
     const file = await fs.readFile(filePath, "utf8");
     const json = JSON.parse(file);
     return NextResponse.json(json);
-  } catch (_err) {
+  } catch {
     return NextResponse.json({ error: "Failed to load terminology" }, { status: 500 });
   }
 }

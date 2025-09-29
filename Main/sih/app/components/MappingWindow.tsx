@@ -3,6 +3,24 @@
 import Script from "next/script";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+type EChartsInstance = {
+  setOption: (opt: Record<string, unknown>) => void;
+  dispose: () => void;
+  resize: () => void;
+  on: (event: string, handler: (params: EChartsClickParams) => void) => void;
+};
+
+type EChartsNamespace = {
+  init: (el: HTMLDivElement) => EChartsInstance;
+};
+
+type WindowWithECharts = Window & { echarts?: EChartsNamespace };
+
+type EChartsClickParams = {
+  dataType?: string;
+  data?: { id?: string };
+};
+
 type NodeData = {
   id: string;
   name: string;
@@ -31,12 +49,7 @@ type TerminologyData = {
 
 export function MappingWindow() {
   const chartRef = useRef<HTMLDivElement | null>(null);
-  const echartsRef = useRef<{
-    setOption: (opt: unknown) => void;
-    dispose?: () => void;
-    resize?: () => void;
-    on?: (event: string, handler: (params: unknown) => void) => void;
-  } | null>(null);
+  const echartsRef = useRef<EChartsInstance | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [stats, setStats] = useState<TerminologyData["mappingStats"] | null>(null);
@@ -58,7 +71,7 @@ export function MappingWindow() {
   useEffect(() => {
     if (!echartsReady) return;
     function initChart() {
-      const echarts = (window as unknown as { echarts?: any }).echarts;
+      const echarts = (window as unknown as WindowWithECharts).echarts;
       if (!echarts || !chartRef.current) return;
       echartsRef.current = echarts.init(chartRef.current);
       const isDark = document.documentElement.classList.contains("dark");
@@ -71,13 +84,16 @@ export function MappingWindow() {
           trigger: "item",
           backgroundColor: tooltipBg,
           textStyle: { color: textColor },
-          formatter: function (params: any) {
-            if (params.dataType === "node") {
-              return `<strong>${params.data.name}</strong><br/>Type: ${
-                params.data.category === 0 ? "NAMASTE" : "ICD-11-TM2"
-              }<br/>Status: ${params.data.status || "Unknown"}`;
+          formatter: function (params: EChartsClickParams & { data?: { name?: string; category?: number; status?: string; source?: string; target?: string } }) {
+            const p = params;
+            if (p.dataType === "node" && p.data) {
+              const d = p.data;
+              return `<strong>${d.name ?? ""}</strong><br/>Type: ${
+                d.category === 0 ? "NAMASTE" : "ICD-11-TM2"
+              }<br/>Status: ${d.status ?? "Unknown"}`;
             } else {
-              return `Mapping: ${params.data.source} → ${params.data.target}`;
+              const l = p.data;
+              return l && l.source && l.target ? `Mapping: ${l.source} → ${l.target}` : "";
             }
           },
         },
@@ -123,15 +139,18 @@ export function MappingWindow() {
         ],
       });
 
-      echartsRef.current && (echartsRef.current as any).on?.("click", function (params: any) {
-        if (params.dataType === "node") {
-          setSelectedId(params.data.id);
-        }
-      });
+      if (echartsRef.current) {
+        echartsRef.current.on("click", function (params: EChartsClickParams) {
+          const pid = params?.data?.id;
+          if (params?.dataType === "node" && pid) {
+            setSelectedId(pid);
+          }
+        });
+      }
 
       function handleResize() {
-        if (echartsRef.current && (echartsRef.current as any).resize) {
-          (echartsRef.current as any).resize();
+        if (echartsRef.current) {
+          echartsRef.current.resize();
         }
       }
       window.addEventListener("resize", handleResize);

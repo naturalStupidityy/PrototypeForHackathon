@@ -71,7 +71,7 @@ export async function GET() {
     const nodes = Array.from(nodeMap.values());
 
     return NextResponse.json({ nodes, links });
-  } catch (_err) {
+  } catch {
     return NextResponse.json({ error: "Failed to load mappings" }, { status: 500 });
   }
 }
