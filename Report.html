@@ -1,0 +1,1826 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAMASTE & ICD-11 TM2 Terminology Integration: Implementation Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tiempos+Headline:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --secondary: #475569;
+            --accent: #3b82f6;
+            --muted: #64748b;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+        }
+        
+        .font-tiempos { font-family: 'Tiempos Headline', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        
+        .toc-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            z-index: 1000;
+            padding: 2rem 1.5rem;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+        
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        
+        .citation {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            text-decoration: none;
+            margin-left: 0.25rem;
+            transition: all 0.2s;
+        }
+        
+        .citation:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .section-number {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .diagram-container {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .code-block {
+            background: var(--primary);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        @media (max-width: 1024px) {
+            .toc-fixed {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .toc-fixed.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .px-8 {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+            
+            .hero-grid h1 {
+                font-size: 2.5rem;
+                line-height: 1.2;
+            }
+            
+            .hero-grid img {
+                height: auto;
+                max-height: 300px;
+            }
+        }
+        
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+  <base target="_blank">
+</head>
+
+  <body class="font-inter text-gray-900 bg-gray-50">
+    <!-- Table of Contents -->
+    <nav class="toc-fixed">
+      <div class="mb-8">
+        <h3 class="font-tiempos text-lg font-bold text-gray-900 mb-4">Contents</h3>
+        <ul class="space-y-2 text-sm">
+          <li>
+            <a href="#executive-summary" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">Executive Summary</a>
+          </li>
+          <li>
+            <a href="#system-architecture" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">System Architecture</a>
+          </li>
+          <li>
+            <a href="#fhir-resources" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">FHIR R4 Resources</a>
+          </li>
+          <li>
+            <a href="#api-endpoints" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">API Endpoints</a>
+          </li>
+          <li>
+            <a href="#technology-stack" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">Technology Stack</a>
+          </li>
+          <li>
+            <a href="#implementation" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">Implementation Guide</a>
+          </li>
+          <li>
+            <a href="#compliance" class="text-gray-600 hover:text-blue-600 transition-colors block py-1">Compliance & Governance</a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="mt-8 pt-8 border-t border-gray-200">
+        <p class="text-xs text-gray-500 mb-2">Key Metrics</p>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span>NAMASTE Codes</span>
+            <span class="font-semibold">4,500+</span>
+          </div>
+          <div class="flex justify-between">
+            <span>ICD-11 TM2 Codes</span>
+            <span class="font-semibold">529</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Pattern Codes</span>
+            <span class="font-semibold">196</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Hero Section -->
+      <section class="bg-white pt-16 pb-12">
+        <div class="max-w-7xl mx-auto px-8">
+          <div class="hero-grid">
+            <div>
+              <div class="section-number mb-4">Implementation Guide</div>
+              <h1 class="font-tiempos text-5xl font-bold text-gray-900 leading-tight mb-6">
+                <em class="italic">Integrating Traditional Wisdom</em>
+                <br>
+                with Global Standards
+              </h1>
+              <p class="text-xl text-gray-600 leading-relaxed mb-8">
+                A comprehensive FHIR R4-compliant solution for integrating India's NAMASTE traditional medicine codes with WHO's ICD-11 TM2 framework, enabling seamless interoperability across India's digital health ecosystem.
+              </p>
+              <div class="flex items-center space-x-6 text-sm text-gray-500">
+                <span><i class="fas fa-calendar mr-2"></i>2025</span>
+                <span><i class="fas fa-building mr-2"></i>Ministry of Ayush</span>
+                <span><i class="fas fa-code mr-2"></i>FHIR R4</span>
+              </div>
+            </div>
+            <div class="relative">
+              <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Traditional medicine and digital integration concept" class="w-full h-80 object-cover rounded-2xl shadow-lg" size="medium" aspect="wide" query="traditional medicine digital integration" referrerpolicy="no-referrer" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Executive Summary -->
+      <section id="executive-summary" class="bg-gray-50 py-16">
+        <div class="max-w-4xl mx-auto px-8">
+          <div class="section-number mb-4">01</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">Executive Summary</h2>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-xl text-gray-700 leading-relaxed mb-8">
+              India's Ayush sector stands at a pivotal moment in its digital transformation journey. As the Ministry of Ayush drives the transition from paper-based records to interoperable digital health systems, the integration of traditional medicine terminologies with global standards becomes paramount.
+            </p>
+
+            <div class="highlight-box">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-lightbulb text-blue-600 mr-3"></i>
+                Core Innovation: Dual-Coding Framework
+              </h3>
+              <p class="text-gray-700 mb-4">
+                This implementation guide presents a <strong>lightweight, FHIR R4-compliant terminology micro-service</strong> that bridges the gap between India's traditional medicine systems and global healthcare standards. By integrating <strong>NAMASTE codes (4,500+ terms)</strong> with <strong>WHO's ICD-11 TM2 framework (529 disorder categories)</strong>, we enable healthcare practitioners to preserve clinical richness while ensuring interoperability.
+              </p>
+              <div class="grid grid-cols-2 gap-4 mt-6">
+                <div class="bg-white p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-blue-600">4,500+</div>
+                  <div class="text-sm text-gray-600">NAMASTE Terms</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-blue-600">529</div>
+                  <div class="text-sm text-gray-600">ICD-11 TM2 Codes</div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="font-tiempos text-2xl font-semibold text-gray-900 mt-12 mb-6">Strategic Alignment</h3>
+            <p class="text-gray-700 mb-6">
+              This solution directly supports the <strong>Ayushman Bharat Digital Mission (ABDM)</strong> and aligns with <strong>India's 2016 EHR Standards</strong>, mandating FHIR R4 APIs, SNOMED CT semantics, and ABHA-linked authentication<a href="#ref-1" class="citation">1</a>. The micro-service architecture ensures seamless integration with existing EMR systems while maintaining compliance with national health stack requirements.
+            </p>
+
+            <h3 class="font-tiempos text-2xl font-semibold text-gray-900 mt-12 mb-6">Target Impact</h3>
+            <div class="grid grid-cols-3 gap-6 mb-8">
+              <div class="text-center p-6 bg-white rounded-xl border border-gray-200">
+                <i class="fas fa-hospital text-3xl text-blue-600 mb-4"></i>
+                <h4 class="font-semibold text-gray-900 mb-2">EMR Vendors</h4>
+                <p class="text-sm text-gray-600">Seamless integration with existing systems</p>
+              </div>
+              <div class="text-center p-6 bg-white rounded-xl border border-gray-200">
+                <i class="fas fa-user-md text-3xl text-blue-600 mb-4"></i>
+                <h4 class="font-semibold text-gray-900 mb-2">Clinicians</h4>
+                <p class="text-sm text-gray-600">Enhanced clinical decision support</p>
+              </div>
+              <div class="text-center p-6 bg-white rounded-xl border border-gray-200">
+                <i class="fas fa-chart-line text-3xl text-blue-600 mb-4"></i>
+                <h4 class="font-semibold text-gray-900 mb-2">Ministry of Ayush</h4>
+                <p class="text-sm text-gray-600">Real-time morbidity analytics</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Architecture -->
+      <section id="system-architecture" class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="section-number mb-4">02</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">System Architecture & Data Flow</h2>
+
+          <div class="prose prose-lg max-w-none mb-12">
+            <p class="text-xl text-gray-700 leading-relaxed">
+              The architecture employs a modular, micro-service based approach designed for scalability and seamless integration with India's National Health Stack. The system emphasizes loose coupling between EMR systems and the terminology service, ensuring changes in one component don't cascade to others.
+            </p>
+          </div>
+
+          <div class="diagram-container">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-sitemap text-blue-600 mr-3"></i>
+              High-Level System Architecture
+            </h3>
+            <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Flowchart showing data flow between EMR systems, terminology micro-service, and National Health Stack components" class="w-full h-64 object-contain rounded-lg bg-gray-50 p-4" size="medium" aspect="wide" style="linedrawing" query="healthcare terminology microservice architecture flowchart" referrerpolicy="no-referrer" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-8 mb-12">
+            <div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-4">Core Components</h3>
+              <div class="space-y-4">
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fas fa-desktop text-blue-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">EMR System</h4>
+                    <p class="text-sm text-gray-600">Client application providing UI for diagnosis entry and patient records</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fas fa-server text-green-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Terminology Micro-Service</h4>
+                    <p class="text-sm text-gray-600">Central hub managing terminologies and providing API endpoints</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fas fa-database text-purple-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Data Sources</h4>
+                    <p class="text-sm text-gray-600">NAMASTE CSV files and WHO ICD-API for terminology data</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-4">Security Layer</h3>
+              <div class="space-y-4">
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fas fa-shield-alt text-red-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">ABHA Authentication</h4>
+                    <p class="text-sm text-gray-600">OAuth 2.0 integration with Ayushman Bharat Health Account</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fas fa-key text-orange-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">ISO 22600 Access Control</h4>
+                    <p class="text-sm text-gray-600">Role-based permissions and audit trails</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fas fa-network-wired text-indigo-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">National Health Stack Integration</h4>
+                    <p class="text-sm text-gray-600">ABDM, HIE, and HCX compliance</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 rounded-xl p-8">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-exchange-alt text-blue-600 mr-3"></i>
+              Clinical Workflow: Diagnosis Entry and Dual-Coding
+            </h3>
+            <div class="grid grid-cols-4 gap-4">
+              <div class="text-center">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span class="text-blue-600 font-bold">1</span>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Search</h4>
+                <p class="text-sm text-gray-600">Clinician enters diagnosis term in EMR UI</p>
+              </div>
+              <div class="text-center">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span class="text-green-600 font-bold">2</span>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Auto-Complete</h4>
+                <p class="text-sm text-gray-600">$expand operation returns matching NAMASTE & ICD-11 codes</p>
+              </div>
+              <div class="text-center">
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span class="text-purple-600 font-bold">3</span>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Selection</h4>
+                <p class="text-sm text-gray-600">Clinician selects appropriate code from list</p>
+              </div>
+              <div class="text-center">
+                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span class="text-orange-600 font-bold">4</span>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Dual-Coding</h4>
+                <p class="text-sm text-gray-600">$translate operation provides corresponding ICD-11 code</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FHIR Resources -->
+      <section id="fhir-resources" class="bg-gray-50 py-16">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="section-number mb-4">03</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">Core FHIR R4 Terminology Resources</h2>
+
+          <div class="prose prose-lg max-w-none mb-12">
+            <p class="text-xl text-gray-700 leading-relaxed">
+              The terminology micro-service is built around three fundamental FHIR R4 resources that provide standardized representation and management of NAMASTE and ICD-11 terminologies. These resources ensure interoperability while maintaining the clinical richness of traditional medicine systems.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fas fa-code text-blue-600 text-xl"></i>
+              </div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-3">CodeSystem</h3>
+              <p class="text-gray-600 mb-4">Defines the set of codes and their meanings for NAMASTE terminology, enabling validation and auto-complete functionality.</p>
+              <div class="text-sm text-gray-500">
+                <strong>URL:</strong>
+                <code class="block bg-gray-100 p-2 rounded mt-1 text-xs">http://namaste.ayush.gov.in/fhir/CodeSystem/namaste-disorders</code>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fas fa-exchange-alt text-green-600 text-xl"></i>
+              </div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-3">ConceptMap</h3>
+              <p class="text-gray-600 mb-4">Defines relationships between NAMASTE codes and ICD-11 codes, enabling translation and dual-coding functionality.</p>
+              <div class="text-sm text-gray-500">
+                <strong>Mappings:</strong>
+                <div class="mt-1 space-y-1">
+                  <code class="block bg-gray-100 p-2 rounded text-xs">NAMASTE → ICD-11 TM2</code>
+                  <code class="block bg-gray-100 p-2 rounded text-xs">NAMASTE → ICD-11 Biomedicine</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fas fa-list text-purple-600 text-xl"></i>
+              </div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-3">ValueSet</h3>
+              <p class="text-gray-600 mb-4">Groups codes from multiple CodeSystems for specific use cases like auto-complete functionality and search filtering.</p>
+              <div class="text-sm text-gray-500">
+                <strong>Purpose:</strong>
+                <div class="mt-1 space-y-1">
+                  <span class="block">• Auto-complete search</span>
+                  <span class="block">• Code validation</span>
+                  <span class="block">• Filtering and grouping</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="diagram-container">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-code text-blue-600 mr-3"></i>
+              NAMASTE CodeSystem Structure
+            </h3>
+            <div class="code-block">
+              <pre>{
+  "resourceType": "CodeSystem",
+  "url": "http://namaste.ayush.gov.in/fhir/CodeSystem/namaste-disorders",
+  "version": "1.0.0",
+  "name": "NAMASTE",
+  "status": "active",
+  "concept": [
+    {
+      "code": "AY001",
+      "display": "Ama Vata (Rheumatoid Arthritis)",
+      "definition": "A chronic inflammatory disorder affecting joints",
+      "property": [
+        {
+          "code": "parent",
+          "valueCode": "AY000"
+        },
+        {
+          "code": "category",
+          "valueCode": "ayurveda"
+        }
+      ]
+    },
+    {
+      "code": "UN001",
+      "display": "Zeequn Nafs (Asthma)",
+      "definition": "Chronic respiratory condition with difficulty breathing",
+      "property": [
+        {
+          "code": "parent",
+          "valueCode": "UN000"
+        },
+        {
+          "code": "category",
+          "valueCode": "unani"
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-gray-200 p-8 mt-8">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-database text-blue-600 mr-3"></i>
+              Data Ingestion Process
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-3">NAMASTE CSV Ingestion</h4>
+                <div class="space-y-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-blue-600 text-xs font-bold">1</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Parse CSV file with 4,500+ terms</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-blue-600 text-xs font-bold">2</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Validate codes and hierarchical relationships</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-blue-600 text-xs font-bold">3</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Transform to FHIR CodeSystem resource</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-blue-600 text-xs font-bold">4</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Store in terminology database</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-3">WHO ICD-API Integration</h4>
+                <div class="space-y-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-green-600 text-xs font-bold">1</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Connect to WHO ICD-API endpoint</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-green-600 text-xs font-bold">2</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Fetch TM2 and Biomedicine codes</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-green-600 text-xs font-bold">3</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Create corresponding CodeSystem resources</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span class="text-green-600 text-xs font-bold">4</span>
+                    </div>
+                    <span class="text-sm text-gray-700">Schedule automated synchronization</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- API Endpoints -->
+      <section id="api-endpoints" class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="section-number mb-4">04</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">API Endpoints & Operations</h2>
+
+          <div class="prose prose-lg max-w-none mb-12">
+            <p class="text-xl text-gray-700 leading-relaxed">
+              The terminology micro-service exposes a comprehensive set of RESTful API endpoints implementing standard FHIR terminology operations. These endpoints provide the core functionality for code lookup, translation, validation, and secure data exchange.
+            </p>
+          </div>
+
+          <div class="space-y-8">
+            <!-- Auto-Complete Endpoint -->
+            <div class="bg-gray-50 rounded-xl p-8">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-search text-blue-600 mr-3"></i>
+                Auto-Complete Value-Set Lookup
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Endpoint</h4>
+                  <div class="code-block mb-4">
+                    <code>GET /ValueSet/$expand</code>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Key Parameters</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <code>url</code>
+                      <span class="text-gray-600">ValueSet canonical URL</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <code>filter</code>
+                      <span class="text-gray-600">Search text for auto-complete</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <code>count</code>
+                      <span class="text-gray-600">Number of results to return</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <code>offset</code>
+                      <span class="text-gray-600">Pagination offset</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Example Request</h4>
+                  <div class="code-block mb-4">
+                    <pre>GET /ValueSet/$expand
+  ?url=http://namaste.ayush.gov.in/fhir/ValueSet/diagnosis-autocomplete
+  &filter=arth
+  &count=10</pre>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Response Structure</h4>
+                  <div class="code-block">
+                    <pre>{
+  "resourceType": "ValueSet",
+  "expansion": {
+    "contains": [
+      {
+        "system": "http://namaste.ayush.gov.in/fhir/CodeSystem/namaste-disorders",
+        "code": "AY001",
+        "display": "Ama Vata (Rheumatoid Arthritis)"
+      },
+      {
+        "system": "http://id.who.int/icd/release/11/tm2",
+        "code": "TM2001",
+        "display": "Arthritis, specified"
+      }
+    ]
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Translation Endpoint -->
+            <div class="bg-gray-50 rounded-xl p-8">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-exchange-alt text-green-600 mr-3"></i>
+                Translation Operation (NAMASTE ↔ TM2)
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Endpoint</h4>
+                  <div class="code-block mb-4">
+                    <code>GET /ConceptMap/$translate</code>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Key Parameters</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <code>url</code>
+                      <span class="text-gray-600">ConceptMap canonical URL</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <code>code</code>
+                      <span class="text-gray-600">Source code to translate</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <code>system</code>
+                      <span class="text-gray-600">Source code system</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <code>targetSystem</code>
+                      <span class="text-gray-600">Target code system</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Example Request</h4>
+                  <div class="code-block mb-4">
+                    <pre>GET /ConceptMap/$translate
+  ?url=http://namaste.ayush.gov.in/fhir/ConceptMap/namaste-to-icd11-tm2
+  &code=AY001
+  &system=http://namaste.ayush.gov.in/fhir/CodeSystem/namaste-disorders
+  &targetSystem=http://id.who.int/icd/release/11/tm2</pre>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Response Structure</h4>
+                  <div class="code-block">
+                    <pre>{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "result",
+      "valueBoolean": true
+    },
+    {
+      "name": "match",
+      "part": [
+        {
+          "name": "concept",
+          "valueCoding": {
+            "system": "http://id.who.int/icd/release/11/tm2",
+            "code": "TM2001",
+            "display": "Arthritis, specified"
+          }
+        },
+        {
+          "name": "equivalence",
+          "valueCode": "equivalent"
+        }
+      ]
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bundle Upload Endpoint -->
+            <div class="bg-gray-50 rounded-xl p-8">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-upload text-purple-600 mr-3"></i>
+                Secure FHIR Bundle Upload
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Endpoint</h4>
+                  <div class="code-block mb-4">
+                    <code>POST /Bundle</code>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Security</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <span>Authentication</span>
+                      <span class="text-gray-600">ABHA OAuth 2.0</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Authorization</span>
+                      <span class="text-gray-600">Role-based access</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Encryption</span>
+                      <span class="text-gray-600">HTTPS/TLS</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Audit Trail</span>
+                      <span class="text-gray-600">ISO 22600 compliant</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-3">Bundle Structure</h4>
+                  <div class="code-block">
+                    <pre>{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-001"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "code": {
+          "coding": [
+            {
+              "system": "http://namaste.ayush.gov.in/fhir/CodeSystem/namaste-disorders",
+              "code": "AY001",
+              "display": "Ama Vata"
+            },
+            {
+              "system": "http://id.who.int/icd/release/11/tm2",
+              "code": "TM2001",
+              "display": "Arthritis, specified"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="highlight-box mt-8">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-4">
+              <i class="fas fa-check-circle text-green-600 mr-3"></i>
+              Additional Terminology Operations
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-2">
+                  <code>$validate-code</code>
+                </h4>
+                <p class="text-sm text-gray-600">Validate codes against CodeSystem or ValueSet</p>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-2">
+                  <code>$lookup</code>
+                </h4>
+                <p class="text-sm text-gray-600">Retrieve code details and properties</p>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-2">
+                  <code>$subsumes</code>
+                </h4>
+                <p class="text-sm text-gray-600">Test hierarchical relationships between codes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Technology Stack -->
+      <section id="technology-stack" class="bg-gray-50 py-16">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="section-number mb-4">05</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">Recommended Technology Stack</h2>
+
+          <div class="prose prose-lg max-w-none mb-12">
+            <p class="text-xl text-gray-700 leading-relaxed">
+              The technology stack is carefully selected to ensure robustness, scalability, and compliance with India's digital health standards. Each component is chosen for its proven track record in healthcare IT and alignment with national health stack requirements.
+            </p>
+          </div>
+
+          <div class="space-y-12">
+            <!-- Core Framework -->
+            <div>
+              <h3 class="font-tiempos text-2xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-cogs text-blue-600 mr-3"></i>
+                Core Framework & Libraries
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Java HAPI FHIR library logo" class="w-12 h-12 object-contain mr-4" size="small" aspect="square" query="HAPI FHIR logo" referrerpolicy="no-referrer" />
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">HAPI FHIR</h4>
+                      <p class="text-sm text-gray-600">Java-based FHIR R4 implementation</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Complete FHIR R4 support</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Built-in validation framework</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Extensive documentation</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Spring Boot framework logo" class="w-12 h-12 object-contain mr-4" size="small" aspect="square" query="Spring Boot logo" referrerpolicy="no-referrer" />
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">Spring Boot</h4>
+                      <p class="text-sm text-gray-600">Micro-service development framework</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Embedded web servers</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Auto-configuration</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Production-ready features</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="LinuxForHealth FHIR server logo" class="w-12 h-12 object-contain mr-4" size="small" aspect="square" query="LinuxForHealth FHIR Server logo" referrerpolicy="no-referrer" />
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">LinuxForHealth</h4>
+                      <p class="text-sm text-gray-600">Reference FHIR server implementation</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Production-tested architecture</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Built-in database integration</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Scalable deployment options</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Storage -->
+            <div>
+              <h3 class="font-tiempos text-2xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-database text-green-600 mr-3"></i>
+                Data Storage & Search
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="PostgreSQL database logo" class="w-12 h-12 object-contain mr-4" size="small" aspect="square" color="blue" style="clipart" query="PostgreSQL logo" referrerpolicy="no-referrer" />
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">PostgreSQL</h4>
+                      <p class="text-sm text-gray-600">Relational database for FHIR resources</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>ACID transaction support</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Data integrity constraints</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>JSON/B support for FHIR</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Proven reliability in healthcare</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Elasticsearch logo" class="w-12 h-12 object-contain mr-4" size="small" aspect="square" query="Elasticsearch logo" referrerpolicy="no-referrer" />
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">Elasticsearch</h4>
+                      <p class="text-sm text-gray-600">High-performance search and auto-complete</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Full-text search capabilities</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Fuzzy matching support</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Real-time indexing</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Scalable horizontal scaling</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 bg-blue-50 rounded-lg p-4">
+                <h5 class="font-semibold text-gray-900 mb-2">Alternative: Snowstorm Terminology Server</h5>
+                <p class="text-sm text-gray-700">
+                  For organizations requiring enterprise-scale terminology management, Snowstorm provides a production-ready terminology server built on HAPI FHIR and Elasticsearch, optimized for SNOMED CT and large-scale deployments<a href="#ref-2" class="citation">2</a>.
+                </p>
+              </div>
+            </div>
+
+            <!-- Security & Compliance -->
+            <div>
+              <h3 class="font-tiempos text-2xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-shield-alt text-red-600 mr-3"></i>
+                Security & Compliance
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="ABHA logo" class="w-12 h-12 object-contain mr-4" size="small" aspect="square" query="ABHA logo" referrerpolicy="no-referrer" />
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">ABHA OAuth 2.0</h4>
+                      <p class="text-sm text-gray-600">Authentication and authorization</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>National health ID integration</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Secure token-based access</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>ABDM compliance</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
+                      <i class="fas fa-certificate text-gray-600 text-xl"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">ISO 22600</h4>
+                      <p class="text-sm text-gray-600">Access control and audit trails</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Role-based access control</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Comprehensive audit logging</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Healthcare security standards</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                  <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                      <i class="fas fa-link text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-tiempos text-lg font-semibold text-gray-900">SNOMED CT & LOINC</h4>
+                      <p class="text-sm text-gray-600">Semantic interoperability</p>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>International coding standards</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>EHR Standards 2016 compliance</span>
+                    </div>
+                    <div class="flex items-center text-green-600">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>Global interoperability</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Implementation Guide -->
+      <section id="implementation" class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="section-number mb-4">06</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">Implementation & Deployment Guide</h2>
+
+          <div class="prose prose-lg max-w-none mb-12">
+            <p class="text-xl text-gray-700 leading-relaxed">
+              This comprehensive guide provides step-by-step instructions for implementing the terminology micro-service, from initial environment setup to production deployment. The approach emphasizes modularity and compliance with India's digital health standards.
+            </p>
+          </div>
+
+          <div class="space-y-12">
+            <!-- Environment Setup -->
+            <div class="bg-gray-50 rounded-xl p-8">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-tools text-blue-600 mr-3"></i>
+                Setting Up the Development Environment
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">1. FHIR Server Configuration</h4>
+                  <div class="space-y-3 text-sm">
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-blue-600 text-xs font-bold">1</span>
+                      </div>
+                      <span class="text-gray-700">Install HAPI FHIR or deploy LinuxForHealth FHIR Server</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-blue-600 text-xs font-bold">2</span>
+                      </div>
+                      <span class="text-gray-700">Configure database connection (PostgreSQL)</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-blue-600 text-xs font-bold">3</span>
+                      </div>
+                      <span class="text-gray-700">Set up search engine integration (Elasticsearch)</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-blue-600 text-xs font-bold">4</span>
+                      </div>
+                      <span class="text-gray-700">Configure FHIR R4 compliance settings</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">2. Database & Search Setup</h4>
+                  <div class="space-y-3 text-sm">
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-green-600 text-xs font-bold">1</span>
+                      </div>
+                      <span class="text-gray-700">Install PostgreSQL and create FHIR database</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-green-600 text-xs font-bold">2</span>
+                      </div>
+                      <span class="text-gray-700">Configure Elasticsearch cluster</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-green-600 text-xs font-bold">3</span>
+                      </div>
+                      <span class="text-gray-700">Set up connection pooling and caching</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-green-600 text-xs font-bold">4</span>
+                      </div>
+                      <span class="text-gray-700">Configure backup and recovery procedures</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">3. ABHA Integration</h4>
+                  <div class="space-y-3 text-sm">
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-purple-600 text-xs font-bold">1</span>
+                      </div>
+                      <span class="text-gray-700">Register application in ABHA sandbox</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-purple-600 text-xs font-bold">2</span>
+                      </div>
+                      <span class="text-gray-700">Configure OAuth 2.0 client credentials</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-purple-600 text-xs font-bold">3</span>
+                      </div>
+                      <span class="text-gray-700">Set up token validation endpoints</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                      <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-purple-600 text-xs font-bold">4</span>
+                      </div>
+                      <span class="text-gray-700">Configure role-based access control</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Ingestion -->
+            <div class="bg-gray-50 rounded-xl p-8">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-download text-green-600 mr-3"></i>
+                Data Ingestion & Synchronization
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">NAMASTE CSV Parser & Importer</h4>
+                  <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                      <h5 class="font-semibold text-gray-900 mb-2">CSV Processing Pipeline</h5>
+                      <div class="space-y-2 text-sm">
+                        <div class="flex items-center">
+                          <i class="fas fa-file-csv text-blue-600 mr-2"></i>
+                          <span>Read and parse NAMASTE CSV export</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-check-double text-green-600 mr-2"></i>
+                          <span>Validate code uniqueness and hierarchy</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-transform text-purple-600 mr-2"></i>
+                          <span>Transform to FHIR CodeSystem format</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-database text-orange-600 mr-2"></i>
+                          <span>Persist to PostgreSQL database</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                      <strong>Key Features:</strong> Batch processing, error handling, version tracking, and idempotent imports
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">WHO ICD-API Integration</h4>
+                  <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                      <h5 class="font-semibold text-gray-900 mb-2">API Client Development</h5>
+                      <div class="space-y-2 text-sm">
+                        <div class="flex items-center">
+                          <i class="fas fa-plug text-blue-600 mr-2"></i>
+                          <span>Connect to WHO ICD-API endpoint</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-sync text-green-600 mr-2"></i>
+                          <span>Fetch TM2 and Biomedicine codes</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-code-branch text-purple-600 mr-2"></i>
+                          <span>Create corresponding CodeSystem resources</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-clock text-orange-600 mr-2"></i>
+                          <span>Schedule automated synchronization</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                      <strong>Key Features:</strong> Rate limiting, caching, incremental updates, and error recovery
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Interface -->
+            <div class="bg-gray-50 rounded-xl p-8">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-desktop text-purple-600 mr-3"></i>
+                Building the User Interface
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">Search Interface</h4>
+                  <div class="bg-white rounded-lg p-4 border border-gray-200 mb-4">
+                    <div class="space-y-3">
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-search text-blue-600 mr-2"></i>
+                        <span>Auto-complete search box</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-layer-group text-green-600 mr-2"></i>
+                        <span>Mixed NAMASTE/ICD-11 results</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-history text-purple-600 mr-2"></i>
+                        <span>Recent searches</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-bookmark text-orange-600 mr-2"></i>
+                        <span>Favorites/bookmarks</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-sm text-gray-600">Leverages $expand operation with filtering and pagination</p>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">Mapping Visualization</h4>
+                  <div class="bg-white rounded-lg p-4 border border-gray-200 mb-4">
+                    <div class="space-y-3">
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-sitemap text-blue-600 mr-2"></i>
+                        <span>Visual mapping graph</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-eye text-green-600 mr-2"></i>
+                        <span>Equivalence relationships</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-edit text-purple-600 mr-2"></i>
+                        <span>Mapping management tools</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-chart-line text-orange-600 mr-2"></i>
+                        <span>Coverage statistics</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-sm text-gray-600">Uses $translate operation to show code relationships</p>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">ProblemList Constructor</h4>
+                  <div class="bg-white rounded-lg p-4 border border-gray-200 mb-4">
+                    <div class="space-y-3">
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-user-md text-blue-600 mr-2"></i>
+                        <span>Patient context selection</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-stethoscope text-green-600 mr-2"></i>
+                        <span>Condition code selection</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-file-medical text-purple-600 mr-2"></i>
+                        <span>FHIR Bundle generation</span>
+                      </div>
+                      <div class="flex items-center text-sm">
+                        <i class="fas fa-upload text-orange-600 mr-2"></i>
+                        <span>Direct Bundle submission</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-sm text-gray-600">Creates compliant FHIR Bundle with dual-coded conditions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deployment Architecture -->
+          <div class="mt-12">
+            <h3 class="font-tiempos text-2xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-cloud text-blue-600 mr-3"></i>
+              Deployment Architecture
+            </h3>
+            <div class="diagram-container">
+              <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Cloud microservice deployment architecture with load balancing and security components" class="w-full h-64 object-contain rounded-lg bg-gray-50 p-4" size="medium" aspect="wide" style="linedrawing" query="cloud microservice deployment diagram" referrerpolicy="no-referrer" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-4">Production Deployment Options</h4>
+                <div class="space-y-4">
+                  <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h5 class="font-semibold text-gray-900 mb-2">Cloud-Native Deployment</h5>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <li>• Containerized micro-service (Docker/Kubernetes)</li>
+                      <li>• Auto-scaling based on load</li>
+                      <li>• Managed database services</li>
+                      <li>• Cloud provider security features</li>
+                    </ul>
+                  </div>
+                  <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h5 class="font-semibold text-gray-900 mb-2">On-Premises Deployment</h5>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <li>• Traditional VM or bare-metal installation</li>
+                      <li>• Organization-controlled infrastructure</li>
+                      <li>• Integration with existing systems</li>
+                      <li>• Custom security policies</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-4">Scalability & Performance</h4>
+                <div class="space-y-4">
+                  <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h5 class="font-semibold text-gray-900 mb-2">Load Balancing</h5>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <li>• Multiple micro-service instances</li>
+                      <li>• Health checks and failover</li>
+                      <li>• Geographic distribution</li>
+                      <li>• Caching strategies</li>
+                    </ul>
+                  </div>
+                  <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h5 class="font-semibold text-gray-900 mb-2">Monitoring & Observability</h5>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <li>• Application performance monitoring</li>
+                      <li>• Log aggregation and analysis</li>
+                      <li>• Alerting and incident response</li>
+                      <li>• Usage analytics and reporting</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Compliance & Governance -->
+      <section id="compliance" class="bg-gray-50 py-16">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="section-number mb-4">07</div>
+          <h2 class="font-tiempos text-3xl font-bold text-gray-900 mb-8">Compliance & Governance</h2>
+
+          <div class="prose prose-lg max-w-none mb-12">
+            <p class="text-xl text-gray-700 leading-relaxed">
+              Compliance with India's digital health standards and robust governance frameworks are fundamental to the terminology micro-service. This section outlines the regulatory requirements, security measures, and governance practices essential for production deployment.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fas fa-file-contract text-blue-600 text-xl"></i>
+              </div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-3">India's 2016 EHR Standards</h3>
+              <p class="text-gray-600 mb-4">Full compliance with national digital health standards for interoperability and data exchange.</p>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>FHIR R4 API compliance</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>SNOMED CT & LOINC semantics</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>ISO 22600 access control</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fas fa-shield-alt text-red-600 text-xl"></i>
+              </div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-3">Data Privacy & Security</h3>
+              <p class="text-gray-600 mb-4">Comprehensive security framework protecting patient data and ensuring privacy compliance.</p>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>ABHA-linked OAuth 2.0</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>End-to-end encryption</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>Audit trails and versioning</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <i class="fas fa-balance-scale text-green-600 text-xl"></i>
+              </div>
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-3">Governance Framework</h3>
+              <p class="text-gray-600 mb-4">Robust governance practices ensuring data quality, integrity, and regulatory compliance.</p>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>Version tracking & metadata</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>Data provenance & traceability</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-600 mr-2"></i>
+                  <span>Change management protocols</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compliance Checklist -->
+          <div class="bg-white rounded-xl border border-gray-200 p-8 mb-12">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-clipboard-check text-blue-600 mr-3"></i>
+              EHR Standards 2016 Compliance Matrix
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-gray-200">
+                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Standard</th>
+                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Requirement</th>
+                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Implementation</th>
+                    <th class="text-center py-3 px-4 font-semibold text-gray-900">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr>
+                    <td class="py-3 px-4 text-gray-900">API Standards</td>
+                    <td class="py-3 px-4 text-gray-700">FHIR R4 compliant endpoints</td>
+                    <td class="py-3 px-4 text-gray-700">HAPI FHIR library with custom resources</td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check mr-1"></i>Compliant
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-4 text-gray-900">Semantic Standards</td>
+                    <td class="py-3 px-4 text-gray-700">SNOMED CT & LOINC integration</td>
+                    <td class="py-3 px-4 text-gray-700">CodeSystem mapping and validation</td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check mr-1"></i>Compliant
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-4 text-gray-900">Security Standards</td>
+                    <td class="py-3 px-4 text-gray-700">ISO 22600 access control</td>
+                    <td class="py-3 px-4 text-gray-700">ABHA OAuth 2.0 with audit trails</td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check mr-1"></i>Compliant
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-4 text-gray-900">Patient Identification</td>
+                    <td class="py-3 px-4 text-gray-700">ABHA integration</td>
+                    <td class="py-3 px-4 text-gray-700">OAuth 2.0 with health ID linking</td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check mr-1"></i>Compliant
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-4 text-gray-900">Data Exchange</td>
+                    <td class="py-3 px-4 text-gray-700">Secure FHIR Bundle upload</td>
+                    <td class="py-3 px-4 text-gray-700">Encrypted transmission with validation</td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check mr-1"></i>Compliant
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Audit and Monitoring -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-history text-blue-600 mr-3"></i>
+                Audit Trail Requirements
+              </h3>
+              <div class="space-y-4">
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-user text-blue-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">User Authentication</h4>
+                    <p class="text-sm text-gray-600">Log all user access with ABHA IDs and timestamps</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-key text-green-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Data Access</h4>
+                    <p class="text-sm text-gray-600">Record all API calls, parameters, and responses</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-edit text-purple-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Data Modifications</h4>
+                    <p class="text-sm text-gray-600">Track all terminology updates and mappings</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-shield-alt text-orange-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Security Events</h4>
+                    <p class="text-sm text-gray-600">Monitor and log security incidents and breaches</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-chart-line text-green-600 mr-3"></i>
+                Monitoring & Analytics
+              </h3>
+              <div class="space-y-4">
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-tachometer-alt text-blue-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Performance Metrics</h4>
+                    <p class="text-sm text-gray-600">Response times, throughput, and resource utilization</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-users text-green-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Usage Analytics</h4>
+                    <p class="text-sm text-gray-600">API usage patterns and user behavior</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-exclamation-triangle text-red-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Error Tracking</h4>
+                    <p class="text-sm text-gray-600">Error rates, types, and resolution tracking</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <i class="fas fa-heartbeat text-purple-600 mt-1"></i>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Health Checks</h4>
+                    <p class="text-sm text-gray-600">System health and availability monitoring</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Governance Framework -->
+          <div class="bg-white rounded-xl border border-gray-200 p-8">
+            <h3 class="font-tiempos text-xl font-semibold text-gray-900 mb-6">
+              <i class="fas fa-gavel text-purple-600 mr-3"></i>
+              Governance Framework
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-users-cog text-blue-600 text-xl"></i>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Steering Committee</h4>
+                <p class="text-sm text-gray-600">Multi-stakeholder governance with clinical, technical, and policy expertise</p>
+              </div>
+              <div class="text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-clipboard-list text-green-600 text-xl"></i>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Change Management</h4>
+                <p class="text-sm text-gray-600">Formal processes for terminology updates and system modifications</p>
+              </div>
+              <div class="text-center">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-graduation-cap text-purple-600 text-xl"></i>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Training & Support</h4>
+                <p class="text-sm text-gray-600">Comprehensive training programs and ongoing technical support</p>
+              </div>
+              <div class="text-center">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-sync-alt text-orange-600 text-xl"></i>
+                </div>
+                <h4 class="font-semibold text-gray-900 mb-2">Continuous Improvement</h4>
+                <p class="text-sm text-gray-600">Regular feedback collection and system enhancement cycles</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-6xl mx-auto px-8">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div>
+              <h3 class="font-tiempos text-xl font-semibold mb-4">References</h3>
+              <div class="space-y-2 text-sm text-gray-300">
+                <div id="ref-1">
+                  <strong>[1]</strong> Ministry of Health and Family Welfare, Government of India. (2016).
+                  <a href="https://mohfw.gov.in/sites/default/files/EHR_Standards.pdf" class="text-blue-400 hover:text-blue-300">Electronic Health Record Standards for India</a>
+                </div>
+                <div id="ref-2">
+                  <strong>[2]</strong> SNOMED International. (2024).
+                  <a href="https://github.com/IHTSDO/snowstorm" class="text-blue-400 hover:text-blue-300">Snowstorm Terminology Server</a>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="font-tiempos text-xl font-semibold mb-4">Key Resources</h3>
+              <div class="space-y-2 text-sm text-gray-300">
+                <div>
+                  <a href="https://www.hl7.org/fhir/" class="text-blue-400 hover:text-blue-300">HL7 FHIR R4 Specification</a>
+                </div>
+                <div>
+                  <a href="https://hapifhir.io/" class="text-blue-400 hover:text-blue-300">HAPI FHIR Library</a>
+                </div>
+                <div>
+                  <a href="https://icd.who.int/icdapi" class="text-blue-400 hover:text-blue-300">WHO ICD-API Documentation</a>
+                </div>
+                <div>
+                  <a href="https://abdm.gov.in/" class="text-blue-400 hover:text-blue-300">Ayushman Bharat Digital Mission</a>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="font-tiempos text-xl font-semibold mb-4">Contact Information</h3>
+              <div class="space-y-2 text-sm text-gray-300">
+                <div class="flex items-center">
+                  <i class="fas fa-building mr-3"></i>
+                  <span>Ministry of Ayush, Government of India</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-envelope mr-3"></i>
+                  <span>digitalhealth@ayush.gov.in</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-globe mr-3"></i>
+                  <span>www.ayush.gov.in</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+            <p>This implementation guide is provided for educational and planning purposes. Organizations should consult with qualified technical and legal professionals before implementing any digital health solutions.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Mobile menu toggle and close functionality
+        const mobileMenuToggle = document.createElement('button');
+        mobileMenuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+        mobileMenuToggle.className = 'fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-lg lg:hidden';
+        document.body.appendChild(mobileMenuToggle);
+
+        const toc = document.querySelector('.toc-fixed');
+
+        // Function to close the menu
+        function closeMenu() {
+            toc.classList.remove('open');
+        }
+
+        // Function to open the menu
+        function openMenu() {
+            toc.classList.add('open');
+        }
+
+        // Toggle menu on hamburger button click
+        mobileMenuToggle.addEventListener('click', () => {
+            if (toc.classList.contains('open')) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+
+        // Close the menu when clicking outside
+        document.addEventListener('click', (event) => {
+            const isClickInsideMenu = toc.contains(event.target);
+            const isClickOnHamburger = mobileMenuToggle.contains(event.target);
+            if (!isClickInsideMenu && !isClickOnHamburger && toc.classList.contains('open')) {
+                closeMenu();
+            }
+        });
+
+        // Close the menu when window is resized to desktop view
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) {
+                closeMenu();
+            }
+        });
+
+        // Highlight active section in TOC
+        const sections = document.querySelectorAll('section[id]');
+        const tocLinks = document.querySelectorAll('.toc-fixed a[href^="#"]');
+
+        function updateActiveTocLink() {
+            let current = '';
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100) {
+                    current = section.id;
+                }
+            });
+
+            tocLinks.forEach(link => {
+                link.classList.remove('text-blue-600', 'font-semibold');
+                link.classList.add('text-gray-600');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.remove('text-gray-600');
+                    link.classList.add('text-blue-600', 'font-semibold');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveTocLink);
+        updateActiveTocLink(); // Initial call
+    </script>
+  </body>
+
+</html>
